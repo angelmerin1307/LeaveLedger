@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Leave Approvals{% endblock %}
+
+{% block content %}
+
+<h4 class="fw-semibold mb-4">Leave Approvals</h4>
+
+<!-- STATUS FILTER -->
+<form method="get" class="mb-3 d-flex align-items-center gap-2">
+    <label class="small fw-semibold mb-0">Status</label>
+    <select name="status"
+            class="form-select form-select-sm"
+            style="width: 140px;"
+            onchange="this.form.submit()">
+        <option value="Pending" {% if current_status == "Pending" %}selected{% endif %}>Pending</option>
+        <option value="Approved" {% if current_status == "Approved" %}selected{% endif %}>Approved</option>
+        <option value="Rejected" {% if current_status == "Rejected" %}selected{% endif %}>Rejected</option>
+        <option value="All" {% if current_status == "All" %}selected{% endif %}>All</option>
+    </select>
+</form>
+
+{% if approvals %}
+
+<table class="table table-bordered table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Employee</th>
+            <th>Leave</th>
+            <th>Dates</th>
+            <th>Days</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Flow</th>
+            <th style="width: 200px;">Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for approval in approvals %}
+        <tr>
+
+            <!-- EMPLOYEE -->
+            <td>
+                {{ approval.leave.employee.first_name }}
+                <div class="small text-muted">
+                    {{ approval.leave.employee.emp_code }}
+                </div>
+            </td>
+
+            <!-- LEAVE TYPE -->
+            <td>{{ approval.leave.leave_type.leave_name }}</td>
+
+            <!-- DATES -->
+            <td>
+                {{ approval.leave.start_date }} →
+                {{ approval.leave.end_date }}
+            </td>
+
+            <!-- DAYS -->
+            <td>
+                {% if approval.leave.is_half_day %}
+                    0.5 <span class="small text-muted fst-italic">Half Day</span>
+                {% else %}
+                    {{ approval.leave.total_days }}
+                {% endif %}
+            </td>
+            <td style="max-width:220px;">
+                <div class="text-truncate"
+                     style="max-width:200px;"
+                     title="{{ approval.leave.reason }}">
+                    {{ approval.leave.reason }}
+                </div>
+            </td>
+            <!-- MAIN STATUS -->
+            <td>
+                {% if approval.leave.display_status == "Completed" %}
+    <span class="badge bg-dark">Completed</span>
+
+{% elif approval.leave.display_status == "Approved" %}
+    <span class="badge bg-success">Approved</span>
+
+{% elif approval.leave.display_status == "Rejected" %}
+    <span class="badge bg-danger">Rejected</span>
+
+{% elif approval.leave.display_status == "Cancelled" %}
+    <span class="badge bg-secondary">Cancelled</span>
+
+{% else %}
+    <span class="badge bg-warning text-dark">Pending</span>
+{% endif %}
+            </td>
+
+            <!-- VIEW FLOW -->
+            <td>
+                <button class="btn btn-sm btn-outline-secondary"
+                        onclick="showApprovalFlow('{{ approval.leave.leave_id }}')">
+                    View
+                </button>
+            </td>
+
+            <!-- ACTIONS -->
+            <td>
+
+{% if approval.leave.display_status == "Completed" %}
+
+    <span class="text-muted small">Completed</span>
+
+{% elif approval.leave.display_status == "Cancelled" %}
+
+    {% if approval.leave.cancelled_by %}
+        <span class="text-muted small">
+            Cancelled by {{ approval.leave.cancelled_by.first_name }}
+        </span>
+    {% else %}
+        <span class="text-muted small">
+            Cancelled
+        </span>
+    {% endif %}
+
+{% elif approval.status == "Pending" %}
+
+    <div class="d-flex gap-2 flex-wrap">
+
+        <a href="{% url 'approve_leave' approval.approval_id %}"
+           class="btn btn-success btn-sm">
+            Approve
+        </a>
+
+        <button type="button"
+                class="btn btn-outline-danger btn-sm"
+                onclick="toggleReject('{{ approval.approval_id }}')">
+            Reject
+        </button>
+
+    </div>
+
+    <form method="post"
+          action="{% url 'reject_leave' approval.approval_id %}"
+          class="mt-2 d-none"
+          id="rejectForm{{ approval.approval_id }}">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+            <input type="text"
+                   name="remarks"
+                   class="form-control form-control-sm"
+                   placeholder="Rejection remarks"
+                   required>
+            <button type="submit"
+                    class="btn btn-danger btn-sm">
+                Submit
+            </button>
+        </div>
+    </form>
+
+{% else %}
+
+    <span class="text-muted small">
+        You {{ approval.status|lower }}
+    </span>
+
+{% endif %}
+
+</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% else %}
+<div class="text-muted text-center py-4">
+    No approvals found.
+</div>
+{% endif %}
+
+
+<!-- APPROVAL FLOW DATA -->
+<script>
+const approvalData = {
+{% for approval in approvals %}
+"{{ approval.leave.leave_id }}": {
+    approvals: [
+        {% for level in approval.leave.approvals.all %}
+        {
+            name: "{{ level.approver.first_name }}",
+            role: "{{ level.approver_role }}",
+            status: "{{ level.status }}",
+            remark: `{{ level.remarks|default_if_none:""|escapejs }}`,
+            date: "{{ level.action_date|date:'d M Y • H:i' }}"
+        },
+        {% endfor %}
+    ],
+    cancelled_by: "{{ approval.leave.cancelled_by.first_name|default:'' }}",
+    cancelled_at: "{{ approval.leave.cancelled_at|date:'d M Y • H:i' }}"
+},
+{% endfor %}
+};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+function showApprovalFlow(id) {
+
+    let approvals = approvalData[id].approvals;
+    let cancelledBy = approvalData[id].cancelled_by;
+    let cancelledAt = approvalData[id].cancelled_at;
+    let html = "";
+
+    if (!approvals || approvals.length === 0) {
+        html = "<div class='text-muted'>No approval records yet.</div>";
+    } else {
+
+        approvals.forEach(function(item) {
+
+            let badgeClass = "bg-warning text-dark";
+            if (item.status === "Approved") badgeClass = "bg-success";
+            if (item.status === "Rejected") badgeClass = "bg-danger";
+
+            html += `
+                <div class="mb-3 p-3 border rounded text-start">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <span class="text-muted">(${item.role})</span>
+                        </div>
+                        <span class="badge ${badgeClass}">
+                            ${item.status}
+                        </span>
+                    </div>
+                    ${item.remark ? `<div class="small text-muted mt-2">Remark: ${item.remark}</div>` : ""}
+                    ${item.date ? `<div class="small text-muted">${item.date}</div>` : ""}
+                </div>
+            `;
+        });
+    }
+    if (cancelledBy) {
+    html += `
+        <div class="mb-3 p-3 border rounded text-start bg-light">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>Leave Cancelled</strong><br>
+                    <span class="text-muted">Cancelled by ${cancelledBy}</span><br>
+                    <span class="text-muted">${cancelledAt}</span>
+                </div>
+                <span class="badge bg-secondary">
+                    Cancelled
+                </span>
+            </div>
+        </div>
+    `;
+}
+
+    Swal.fire({
+        title: "Approval Flow",
+        html: html,
+        width: 650,
+        confirmButtonColor: "#0d6efd"
+    });
+}
+
+function toggleReject(id) {
+    const form = document.getElementById("rejectForm" + id);
+    form.classList.toggle("d-none");
+}
+</script>
+
+{% endblock %}

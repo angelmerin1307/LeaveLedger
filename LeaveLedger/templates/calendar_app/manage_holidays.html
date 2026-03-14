@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% block title %}Manage Holidays{% endblock %}
+
+{% block content %}
+<div class="holiday-wrapper">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h5 class="fw-semibold mb-1">Manage Holidays</h5>
+        <small class="text-muted">Company holiday configuration</small>
+    </div>
+</div>
+
+<!-- ================= ADD HOLIDAY ================= -->
+<div class="card border-0 holiday-card mb-3">
+    <div class="card-body">
+
+        <h6 class="section-title mb-3">Add Holiday</h6>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+
+            <div class="row g-2 align-items-end">
+
+                <div class="col-md-3">
+                    <label class="form-label">Date</label>
+                    <input type="date"
+                           name="holiday_date"
+                           class="form-control form-control-sm"
+                           required>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Holiday Name</label>
+                    <input type="text"
+                           name="holiday_name"
+                           class="form-control form-control-sm"
+                           placeholder="Eg: Independence Day"
+                           required>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Type</label>
+                    <select name="holiday_type"
+                            class="form-select form-select-sm"
+                            required>
+                        <option value="Compulsory">Compulsory</option>
+                        <option value="Optional">Optional</option>
+                        <option value="Weekend">Weekend</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button class="btn btn-primary btn-sm w-100">
+                        Add Holiday
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ================= HOLIDAY LIST ================= -->
+<div class="card border-0 holiday-card">
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0">Existing Holidays</h6>
+            <span class="badge bg-light text-dark">
+                {{ holidays|length }} Total
+            </span>
+        </div>
+
+        {% if holidays %}
+        <div class="table-responsive">
+        <table class="table table-sm align-middle holiday-table">
+
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th style="width:180px;">Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for h in holidays %}
+                <tr>
+
+                    <!-- INLINE EDIT FORM -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="edit">
+                        <input type="hidden" name="holiday_id" value="{{ h.holiday_id }}">
+
+                        <td>
+                            <input type="date"
+                                   name="holiday_date"
+                                   value="{{ h.holiday_date|date:'Y-m-d' }}"
+                                   class="form-control form-control-sm">
+                        </td>
+
+                        <td>
+                            <input type="text"
+                                   name="holiday_name"
+                                   value="{{ h.holiday_name }}"
+                                   class="form-control form-control-sm">
+                        </td>
+
+                        <td>
+                            <select name="holiday_type"
+                                    class="form-select form-select-sm">
+
+                                <option value="Compulsory"
+                                    {% if h.holiday_type == "Compulsory" %}selected{% endif %}>
+                                    Compulsory
+                                </option>
+
+                                <option value="Optional"
+                                    {% if h.holiday_type == "Optional" %}selected{% endif %}>
+                                    Optional
+                                </option>
+
+                                <option value="Weekend"
+                                    {% if h.holiday_type == "Weekend" %}selected{% endif %}>
+                                    Weekend
+                                </option>
+
+                            </select>
+                        </td>
+
+                        <td class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-warning">
+                                Save
+                            </button>
+                    </form>
+
+                    <!-- DELETE -->
+                    <form method="post" class="delete-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="holiday_id" value="{{ h.holiday_id }}">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger delete-btn">
+                            Delete
+                        </button>
+                    </form>
+
+                        </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <div class="text-center py-4 text-muted small">
+                No holidays added yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- SweetAlert Delete -->
+<script>
+document.querySelectorAll(".delete-btn").forEach(btn => {
+    btn.addEventListener("click", function() {
+        const form = this.closest("form");
+
+        Swal.fire({
+            icon: "warning",
+            title: "Delete Holiday?",
+            text: "This action cannot be undone.",
+            showCancelButton: true,
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Yes, delete"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+});
+</script>
+
+<style>
+
+/* ================= PAGE WRAPPER ================= */
+.holiday-wrapper {
+    max-width: 1050px;
+    margin: 0 auto;
+}
+
+/* ================= HEADER ================= */
+.holiday-wrapper h5 {
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+
+.holiday-wrapper small {
+    font-size: 12px;
+}
+
+/* ================= CARD ================= */
+.holiday-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+
+.holiday-card .card-body {
+    padding: 16px;
+}
+
+/* ================= SECTION TITLE ================= */
+.section-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+/* ================= FORM LABEL ================= */
+.form-label {
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    color: #6c757d;
+}
+
+/* ================= TABLE ================= */
+.holiday-table {
+    margin-bottom: 0;
+}
+
+.holiday-table thead th {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6c757d;
+    border-bottom: 1px solid #e9ecef;
+    padding: 8px 10px;
+}
+
+.holiday-table td {
+    font-size: 12px;
+    padding: 6px 10px;
+}
+
+.holiday-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* ================= INPUT STYLE ================= */
+.form-control-sm,
+.form-select-sm {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.form-control-sm:focus,
+.form-select-sm:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.06);
+}
+
+/* ================= BUTTONS ================= */
+.btn-sm {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+/* ================= BADGE ================= */
+.badge {
+    font-size: 10px;
+    padding: 5px 9px;
+    border-radius: 20px;
+}
+
+/* ================= RESPONSIVE TIGHTER ROW ================= */
+.row.g-2 {
+    --bs-gutter-x: .5rem;
+    --bs-gutter-y: .5rem;
+}
+
+</style>
+<script>
+const params = new URLSearchParams(window.location.search);
+const status = params.get("status");
+
+if (status === "added") {
+    Swal.fire({
+        icon: "success",
+        title: "Holiday Added",
+        text: "Holiday has been added successfully.",
+        timer: 2500,
+        showConfirmButton: false
+    });
+}
+
+if (status === "updated") {
+    Swal.fire({
+        icon: "success",
+        title: "Holiday Updated",
+        text: "Holiday updated successfully.",
+        timer: 2500,
+        showConfirmButton: false
+    });
+}
+
+if (status === "deleted") {
+    Swal.fire({
+        icon: "success",
+        title: "Holiday Deleted",
+        text: "Holiday removed successfully.",
+        timer: 2500,
+        showConfirmButton: false
+    });
+}
+</script>
+</div>
+
+{% endblock %}

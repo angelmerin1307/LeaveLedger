@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block title %}Team Calendar{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+
+            <div>
+                <h5 class="fw-semibold mb-1">
+                    {{ title|default:"Team Leave Calendar" }}
+                </h5>
+                <small class="text-muted">
+                    {{ month }}/{{ year }}
+                </small>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a href="?month={{ month|add:'-1' }}&year={{ year }}"
+                   class="btn btn-light btn-sm px-3">
+                    ←
+                </a>
+
+                <a href="?month={{ month|add:'1' }}&year={{ year }}"
+                   class="btn btn-light btn-sm px-3">
+                    →
+                </a>
+            </div>
+
+        </div>
+        <!-- Today Attendance Snapshot -->
+<div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+        <div class="attendance-card present">
+            <h6>Present Today</h6>
+            <h4>{{ today_present }}</h4>
+            <small>Out of {{ total_employees }}</small>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="attendance-card leave">
+            <h6>On Leave Today</h6>
+            <h4>{{ today_on_leave }}</h4>
+            <small>Approved Leaves</small>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="attendance-card total">
+            <h6>Total Employees</h6>
+            <h4>{{ total_employees }}</h4>
+            <small>Active</small>
+        </div>
+    </div>
+
+</div>
+       
+        <!-- Calendar Table -->
+        <div class="table-responsive">
+            <table class="table calendar-table align-middle">
+
+                <thead>
+                    <tr class="text-center">
+                        <th class="employee-column text-start">Employee</th>
+                        {% for day in days %}
+                            <th class="day-column">
+                                {{ day.day }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td class="employee-name">
+                            {{ row.employee.first_name }} {{ row.employee.last_name }}
+                        </td>
+
+                        {% for cell in row.cells %}
+                            <td class="text-center {{ cell.css_class }}"
+                                title="{{ cell.label }}">
+                                {% if cell.label %}
+                                    <span class="leave-label">
+                                        {{ cell.label }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<style>
+
+/* ===============================
+   CARD BODY COMPACT
+=================================*/
+.card-body {
+    padding: 18px 20px;
+}
+
+/* ===============================
+   HEADER COMPACT
+=================================*/
+.card-body h5 {
+    font-size: 16px;
+}
+
+.card-body small {
+    font-size: 12px;
+}
+
+/* ===============================
+   TABLE BASE
+=================================*/
+.calendar-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;   /* reduced */
+}
+
+/* ===============================
+   HEADER
+=================================*/
+.calendar-table thead th {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    height: 36px;  /* reduced */
+    padding: 4px;
+}
+
+/* ===============================
+   CELLS
+=================================*/
+.calendar-table th,
+.calendar-table td {
+    border: none;
+    border-bottom: 1px solid #f1f3f5;
+    height: 34px;      /* reduced */
+    padding: 4px 3px;  /* reduced */
+    background-color: #ffffff;
+    position: relative;
+    transition: background 0.15s ease;
+}
+
+/* ===============================
+   STICKY EMPLOYEE COLUMN
+=================================*/
+.employee-column,
+.employee-name {
+    position: sticky;
+    left: 0;
+    background: #ffffff;
+    z-index: 2;
+}
+
+.calendar-table thead th.employee-column {
+    z-index: 3;
+}
+
+.employee-column {
+    min-width: 180px;  /* reduced */
+}
+
+.employee-name {
+    font-weight: 500;
+    color: #212529;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+/* ===============================
+   DAY COLUMN
+=================================*/
+.day-column {
+    width: 32px;      /* reduced */
+    text-align: center;
+    font-size: 11px;
+}
+
+/* ===============================
+   TODAY COLUMN
+=================================*/
+.today-col {
+    background-color: #eef6ff !important;
+    font-weight: 700;
+}
+
+/* ===============================
+   WEEKEND
+=================================*/
+.weekend {
+    background-color: #f8f9fa !important;
+    color: #9ca3af;
+}
+
+/* ===============================
+   LEAVE CELLS
+=================================*/
+.calendar-table td[class*="leave-"] {
+    font-weight: 600;
+}
+
+.calendar-table td[class*="leave-"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;   /* slightly thinner */
+    height: 100%;
+    border-radius: 2px;
+}
+
+/* Leave Colors (unchanged) */
+.calendar-table td.leave-cl { background-color: #eef5ff; color: #1f6feb; }
+.calendar-table td.leave-cl::before { background-color: #1f6feb; }
+
+.calendar-table td.leave-ml { background-color: #ecfdf3; color: #157347; }
+.calendar-table td.leave-ml::before { background-color: #157347; }
+
+.calendar-table td.leave-ol { background-color: #fff7ed; color: #b45309; }
+.calendar-table td.leave-ol::before { background-color: #b45309; }
+
+.calendar-table td.leave-co { background-color: #f5f3ff; color: #6d28d9; }
+.calendar-table td.leave-co::before { background-color: #6d28d9; }
+
+.calendar-table td.leave-lop { background-color: #fef2f2; color: #b91c1c; }
+.calendar-table td.leave-lop::before { background-color: #b91c1c; }
+
+/* ===============================
+   LEAVE LABEL
+=================================*/
+.leave-label {
+    font-size: 9px;  /* reduced */
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+/* ===============================
+   ROW HOVER
+=================================*/
+.calendar-table tbody tr:hover td {
+    background-color: #f9fafb;
+}
+
+/* ===============================
+   SCROLL
+=================================*/
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* ===============================
+   ATTENDANCE CARDS (COMPACT)
+=================================*/
+.attendance-card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 14px;   /* reduced */
+    border: 1px solid #f1f3f5;
+    transition: 0.2s ease;
+}
+
+.attendance-card h6 {
+    font-size: 12px;  /* reduced */
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.attendance-card h4 {
+    font-weight: 700;
+    font-size: 18px;  /* reduced */
+    margin-bottom: 2px;
+}
+
+.attendance-card small {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.attendance-card.present h4 { color: #157347; }
+.attendance-card.leave h4 { color: #b91c1c; }
+.attendance-card.total h4 { color: #1f6feb; }
+
+.attendance-card:hover {
+    box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+}
+
+</style>
+{% endblock %}

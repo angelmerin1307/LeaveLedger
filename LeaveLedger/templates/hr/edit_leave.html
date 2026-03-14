@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Edit Leave{% endblock %}
+
+{% block content %}
+
+<h4 class="mb-3 text-danger">
+    Edit Leave — {{ leave.employee.emp_code }}
+</h4>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+
+        <p class="text-muted small mb-3">
+            Status: <strong>{{ leave.status }}</strong>
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ form.leave_type.label_tag }}
+                    {{ form.leave_type }}
+                </div>
+
+                <div class="col-md-4">
+                    {{ form.start_date.label_tag }}
+                    {{ form.start_date }}
+                </div>
+
+                <div class="col-md-4">
+                    {{ form.end_date.label_tag }}
+                    {{ form.end_date }}
+                </div>
+
+                <div class="col-md-12">
+                    {{ form.reason.label_tag }}
+                    {{ form.reason }}
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button class="btn btn-danger">
+                    Save Changes
+                </button>
+
+                <a href="{% url 'employee_detail' leave.employee.employee_id %}"
+                   class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

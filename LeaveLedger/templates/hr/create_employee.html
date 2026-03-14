@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Create Employee{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-5 col-md-7">
+
+    <div class="card border-0 create-card">
+      <div class="card-body">
+
+        <div class="text-center mb-3">
+          <h5 class="fw-semibold mb-1">Create Employee</h5>
+          <small class="text-muted">Add a new team member</small>
+        </div>
+
+        <form method="post" class="needs-validation">
+          {% csrf_token %}
+
+          <div class="form-wrapper">
+            {{ form.as_p }}
+          </div>
+
+          <div class="d-grid mt-3">
+            <button class="btn btn-primary btn-sm create-btn">
+              Create Employee
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+
+/* ===============================
+   CARD STYLE (Premium Minimal)
+=================================*/
+.create-card {
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+}
+
+.card-body {
+    padding: 22px 24px;   /* reduced */
+}
+
+/* ===============================
+   FORM SPACING FIX
+=================================*/
+.form-wrapper p {
+    margin-bottom: 12px;   /* reduced */
+}
+
+form label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #495057;
+    display: block;
+}
+
+/* ===============================
+   INPUT STYLING (Premium SaaS)
+=================================*/
+form input,
+form select,
+form textarea {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;   /* compact */
+    font-size: 13px;
+    transition: 0.2s ease;
+}
+
+form input:focus,
+form select:focus,
+form textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.08);
+    outline: none;
+}
+
+/* ===============================
+   BUTTON STYLE
+=================================*/
+.create-btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 8px;
+    transition: 0.2s ease;
+}
+
+.create-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* ===============================
+   HEADER TEXT
+=================================*/
+h5 {
+    font-size: 16px;  /* compact */
+}
+
+small {
+    font-size: 12px;
+}
+
+</style>
+{% if messages %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    {% for message in messages %}
+        {% if message == "employee_created_success" %}
+            Swal.fire({
+                icon: 'success',
+                title: 'Employee Created Successfully',
+                html: `
+                    <div style="font-size:14px;">
+                        Login credentials have been <b>emailed</b> to the employee.
+                    </div>
+                `,
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK',
+                timer: 3500,
+                timerProgressBar: true
+            });
+        {% endif %}
+    {% endfor %}
+});
+</script>
+{% endif %}
+{% endblock %}

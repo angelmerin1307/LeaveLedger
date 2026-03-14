@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+.dashboard-wrapper {
+    background: #f8f9fc;
+    padding: 24px;
+    border-radius: 14px;
+}
+
+/* Typography */
+.section-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #6c757d;
+    margin-bottom: 16px;
+}
+
+.dashboard-wrapper h4 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.dashboard-wrapper small {
+    font-size: 13px;
+}
+
+/* Cards */
+.clean-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    transition: all .2s ease;
+}
+
+.clean-card:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+}
+
+/* KPI Numbers */
+.kpi-number {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Balance Numbers */
+.balance-number {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Table */
+.table thead th {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.table tbody td {
+    font-size: 13px;
+}
+</style>
+
+<div class="dashboard-wrapper">
+
+    <!-- HEADER -->
+    <div class="mb-4">
+        <h4 class="fw-semibold mb-1">Welcome, {{ employee.first_name }}</h4>
+        <div class="text-muted small">
+            {{ employee.designation }}
+        </div>
+    </div>
+
+    <!-- ================= KPI SECTION ================= -->
+    <div class="section-title">Leave Overview</div>
+    <div class="row g-4 mb-4 text-center row-cols-1 row-cols-md-5">
+
+        <div class="col">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Total Days Used</small>
+                    <div class="kpi-number text-primary">
+                        {{ total_days_used }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Approved Applications</small>
+                    <div class="kpi-number text-success">
+                        {{ total_approved }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Pending Applications</small>
+                    <div class="kpi-number text-warning">
+                        {{ total_pending }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Rejected Applications</small>
+                    <div class="kpi-number text-danger">
+                        {{ total_rejected }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+    <div class="card clean-card h-100">
+        <div class="card-body">
+            <small class="text-muted d-block mb-1">
+                Cancelled Applications
+            </small>
+            <div class="kpi-number text-secondary">
+                {{ total_cancelled }}
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
+
+    <!-- ================= LEAVE BALANCE ================= -->
+    <div class="section-title">Leave Balance</div>
+    <div class="row g-4 mb-4 text-center">
+
+        <div class="col">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">CL</small>
+                    <div class="balance-number text-primary">
+                        {{ balance.cl_balance }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">ML</small>
+                    <div class="balance-number text-success">
+                        {{ balance.ml_balance }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">OL</small>
+                    <div class="balance-number text-warning">
+                        {{ balance.ol_balance }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">Comp-Off</small>
+                    <div class="balance-number text-info">
+                        {{ balance.compoff_credit }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-1">LOP</small>
+                    <div class="balance-number text-danger">
+                        {{ lop_taken }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+   
+    <div class="section-title">Analytics</div>
+<div class="row g-4 mb-4 justify-content-center">
+
+    <div class="col-md-5">
+        <div class="card clean-card h-100">
+            <div class="card-body">
+                <div class="section-title">Leave Distribution</div>
+                <div id="leavePieChart" style="height:250px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card clean-card h-100">
+            <div class="card-body">
+                <div class="section-title">Monthly Trend</div>
+                <div id="monthlyChart" style="height:250px;"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+    <!-- ================= RECENT ACTIVITY ================= -->
+    <div class="card clean-card">
+        <div class="card-body">
+            <div class="section-title">Recent Leave Activity</div>
+
+            {% if leaves %}
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Type</th>
+                            <th>Dates</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leaves %}
+                        <tr>
+                            <td>{{ leave.leave_type.leave_name }}</td>
+                            <td>{{ leave.start_date }} → {{ leave.end_date }}</td>
+                            <td>{{ leave.total_days }}</td>
+                            <td>
+    {% if leave.display_status == "Completed" %}
+        <span class="badge bg-dark">
+            Completed
+        </span>
+
+    {% elif leave.display_status == "Approved" %}
+        <span class="badge bg-success">
+            Approved
+        </span>
+
+    {% elif leave.display_status == "Rejected" %}
+        <span class="badge bg-danger">
+            Rejected
+        </span>
+
+    {% elif leave.display_status == "Cancelled" %}
+        <span class="badge bg-secondary">
+            Cancelled
+        </span>
+
+    {% else %}
+        <span class="badge bg-warning text-dark">
+            Pending
+        </span>
+    {% endif %}
+</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="text-muted small">No recent applications.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+const leaveColors = {
+    CL: "#0d6efd",
+    ML: "#198754",
+    OL: "#ffc107",
+    COMPOFF: "#6f42c1",
+    LOP: "#dc3545"
+};
+
+const leaveColorArray = [
+    leaveColors.CL,
+    leaveColors.ML,
+    leaveColors.OL,
+    leaveColors.COMPOFF,
+    leaveColors.LOP
+];
+
+
+// ---------------------------
+// Leave Distribution
+// ---------------------------
+var pieOptions = {
+    chart: {
+        type: 'donut',
+        height: 200
+    },
+    series: [
+        {{ cl_used|default:0 }},
+        {{ ml_used|default:0 }},
+        {{ ol_used|default:0 }},
+        {{ comp_used|default:0 }},
+        {{ lop_used|default:0 }}
+    ],
+    labels: ['CL','ML','OL','Comp-Off','LOP'],
+    colors: leaveColorArray,
+    legend: { position: 'bottom' },
+
+    plotOptions: {
+        pie: {
+            donut: {
+                size: '70%',
+                labels: {
+                    show: true,
+                    total: {
+                        show: true,
+                        label: 'Total Used',
+                        fontSize: '16px',
+                        fontWeight: 600,
+                        fontFamily: 'EB Garamond, serif',
+                        formatter: function () {
+                            return {{ total_days_used|default:0 }};
+                        }
+                    }
+                }
+            }
+        }
+    },
+
+    dataLabels: { enabled: false }
+};
+
+new ApexCharts(
+    document.querySelector("#leavePieChart"),
+    pieOptions
+).render();
+
+
+// ---------------------------
+// Monthly Trend
+// ---------------------------
+var monthlyOptions = {
+    chart: {
+        type: 'area',
+        height: 200,
+        toolbar: { show: false }
+    },
+
+    series: [
+        { name: 'CL', data: {{ cl_monthly|safe }} },
+        { name: 'ML', data: {{ ml_monthly|safe }} },
+        { name: 'OL', data: {{ ol_monthly|safe }} },
+        { name: 'Comp-Off', data: {{ comp_monthly|safe }} },
+        { name: 'LOP', data: {{ lop_monthly|safe }} }
+    ],
+
+    xaxis: {
+        categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    },
+
+    colors: leaveColorArray,
+stroke: {
+    curve: 'smooth',
+    width: [3,3,3,3,3],
+    dashArray: [0,5,2,0,0]   // makes ML + OL visually distinct
+},
+
+markers: {
+    size: 4,
+    strokeWidth: 2,
+    hover: { size: 6 }
+},
+
+  
+
+    fill: {
+        type: "gradient",
+        gradient: {
+            opacityFrom: 0.25,
+            opacityTo: 0.05
+        }
+    },
+
+    legend: { position: 'top' },
+
+    dataLabels: { enabled: false },
+
+    grid: { borderColor: '#e9ecef' }
+};
+
+new ApexCharts(
+    document.querySelector("#monthlyChart"),
+    monthlyOptions
+).render();
+
+});
+</script>
+{% endblock %}

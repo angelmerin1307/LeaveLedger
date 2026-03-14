@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+
+<style>
+body {
+    background: #eef1f6;
+    font-size: 14px;
+}
+
+/* MAIN WRAPPER */
+.exec-wrapper {
+    max-width: 1300px;
+    margin: auto;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+}
+
+/* HEADER */
+.exec-header {
+    background: #0f172a;
+    color: white;
+    padding: 14px 24px;
+    border-radius: 10px 10px 0 0;
+}
+
+.exec-name {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.exec-meta {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* GRID */
+.exec-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: #e5e7eb;
+}
+
+/* PANELS */
+.exec-panel {
+    background: white;
+    padding: 18px 20px;
+}
+
+/* TITLES */
+.exec-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    color: #334155;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+/* ROWS */
+.exec-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    margin-bottom: 8px;
+}
+
+.exec-label {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.exec-value {
+    font-weight: 500;
+    color: #0f172a;
+}
+
+/* KPI STRIP */
+.kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-top: 1px solid #e5e7eb;
+    background: #f8fafc;
+}
+
+.kpi {
+    padding: 14px;
+    text-align: center;
+    border-right: 1px solid #e5e7eb;
+}
+
+.kpi:last-child {
+    border-right: none;
+}
+
+.kpi-value {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.kpi-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #64748b;
+}
+</style>
+
+
+<div class="exec-wrapper">
+
+    <!-- HEADER -->
+    <div class="exec-header d-flex justify-content-between align-items-center">
+        <div>
+            <div class="exec-name">
+                {{ employee.first_name }} {{ employee.last_name }}
+            </div>
+            <div class="exec-meta">
+                {{ employee.emp_code }} • {{ employee.designation }}
+            </div>
+        </div>
+
+        
+    </div>
+
+
+    <!-- MAIN GRID -->
+    <div class="exec-grid">
+
+        <!-- BASIC INFORMATION -->
+        <div class="exec-panel">
+            <div class="exec-title">Basic Information</div>
+
+            <div class="exec-row">
+                <div class="exec-label">Email</div>
+                <div class="exec-value">{{ employee.email }}</div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">Phone</div>
+                <div class="exec-value">{{ employee.phone }}</div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">Joined</div>
+                <div class="exec-value">{{ employee.date_of_joining }}</div>
+            </div>
+        </div>
+
+        <!-- FINANCE -->
+        <div class="exec-panel">
+            <div class="exec-title">Finance</div>
+
+            <div class="exec-row">
+                <div class="exec-label">Bank</div>
+                <div class="exec-value">{{ employee.bank_name }}</div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">Account</div>
+                <div class="exec-value">{{ employee.account_number }}</div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">IFSC</div>
+                <div class="exec-value">{{ employee.ifsc_code }}</div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">PAN</div>
+                <div class="exec-value">{{ employee.pan_number }}</div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">UAN</div>
+                <div class="exec-value">{{ employee.uan_number }}</div>
+            </div>
+        </div>
+
+        <!-- REPORTING -->
+        <div class="exec-panel">
+            <div class="exec-title">Reporting Structure</div>
+
+            <div class="exec-row">
+                <div class="exec-label">Primary</div>
+                <div class="exec-value">{{ employee.pa|default:"Not Assigned" }}</div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">Secondary</div>
+                <div class="exec-value">{{ employee.sa|default:"Not Assigned" }}</div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">HR</div>
+                <div class="exec-value">{{ employee.hr|default:"Not Assigned" }}</div>
+            </div>
+        </div>
+
+        <!-- SUMMARY / LEAVE INTELLIGENCE -->
+        <div class="exec-panel">
+            <div class="exec-title">Leave Summary</div>
+
+            <div class="exec-row">
+                <div class="exec-label">Total Leaves Used</div>
+                <div class="exec-value text-danger">
+                    {{ leave_balance.lop_taken }}
+                </div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">Loss of Pay</div>
+                <div class="exec-value">
+                    {{ leave_balance.lop_taken }}
+                </div>
+            </div>
+
+            <div class="exec-row">
+                <div class="exec-label">Status</div>
+                <div class="exec-value text-muted">
+                    Leave usage within policy
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- LEAVE KPI FOOTER -->
+    <div class="kpi-strip">
+
+        <div class="kpi">
+            <div class="kpi-value">{{ leave_balance.cl_balance }}</div>
+            <div class="kpi-label">Casual Left</div>
+        </div>
+
+        <div class="kpi">
+            <div class="kpi-value">{{ leave_balance.ml_balance }}</div>
+            <div class="kpi-label">Medical Left</div>
+        </div>
+
+        <div class="kpi">
+            <div class="kpi-value">{{ leave_balance.ol_balance }}</div>
+            <div class="kpi-label">Optional Left</div>
+        </div>
+
+        <div class="kpi">
+            <div class="kpi-value">{{ leave_balance.compoff_credit }}</div>
+            <div class="kpi-label">Comp-Off</div>
+        </div>
+
+        <div class="kpi">
+            <div class="kpi-value text-danger">{{ leave_balance.lop_taken }}</div>
+            <div class="kpi-label">Used (LOP)</div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

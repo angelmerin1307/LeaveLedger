@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}Edit Employee{% endblock %}
+
+{% block content %}
+
+<style>
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    .form-control,
+    .form-select {
+        height: 38px;
+    }
+</style>
+
+<!-- PAGE HEADER -->
+<div class="mb-4 border-bottom pb-2">
+    <h4 class="fw-semibold text-danger mb-1">
+        Edit Employee — {{ employee.emp_code }}
+    </h4>
+    <small class="text-muted">Administrative override</small>
+</div>
+
+<form method="post" novalidate>
+{% csrf_token %}
+
+<!-- ================= EMPLOYEE DETAILS ================= -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-semibold text-secondary mb-4">Employee Details</h6>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.first_name.label }}</label>
+                {{ form.first_name|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.last_name.label }}</label>
+                {{ form.last_name|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.email.label }}</label>
+                {{ form.email|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.phone.label }}</label>
+                {{ form.phone|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.designation.label }}</label>
+                {{ form.designation|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.role.label }}</label>
+                {{ form.role|add_class:"form-select" }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.date_of_joining.label }}</label>
+                {{ form.date_of_joining|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-6 mb-3 d-flex align-items-end">
+                <div class="form-check">
+                    {{ form.is_active|add_class:"form-check-input" }}
+                    <label class="form-check-label">
+                        {{ form.is_active.label }}
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= REPORTING STRUCTURE ================= -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-semibold text-secondary mb-4">Reporting Structure</h6>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.pa.label }}</label>
+                {{ form.pa|add_class:"form-select" }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.sa.label }}</label>
+                {{ form.sa|add_class:"form-select" }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.hr.label }}</label>
+                {{ form.hr|add_class:"form-select" }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= BANK & STATUTORY ================= -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-semibold text-secondary mb-4">
+            Bank & Statutory Information
+        </h6>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.bank_name.label }}</label>
+                {{ form.bank_name|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.account_holder_name.label }}</label>
+                {{ form.account_holder_name|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.account_number.label }}</label>
+                {{ form.account_number|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.ifsc_code.label }}</label>
+                {{ form.ifsc_code|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.pan_number.label }}</label>
+                {{ form.pan_number|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.uan_number.label }}</label>
+                {{ form.uan_number|add_class:"form-control" }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= ACTION BUTTONS ================= -->
+<div class="d-flex justify-content-end gap-2">
+    <a href="{% url 'employee_detail' employee.employee_id %}"
+       class="btn btn-outline-secondary">
+        Cancel
+    </a>
+    <button type="submit" class="btn btn-danger px-4">
+        Save Changes
+    </button>
+</div>
+
+</form>
+
+{% endblock %}

@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}Comp-Off{% endblock %}
+
+{% block content %}
+<style>
+/* Professional unified typography */
+.card,
+.card *,
+.table,
+.table *,
+form,
+form * {
+    color: #1f2937 !important;   /* Professional dark gray */
+    font-size: 15px !important;  
+    font-weight: 500 !important;
+}
+
+/* Headings slightly stronger but same size */
+h5 {
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+}
+
+/* Remove muted + primary variations */
+.text-muted,
+.text-primary {
+    color: #1f2937 !important;
+}
+
+/* Keep badges same size */
+.badge {
+    font-size: 15px !important;
+    font-weight: 500 !important;
+}
+</style>
+<div class="row">
+
+<!-- APPLY COMPOFF -->
+<div class="col-md-5">
+<div class="card shadow-sm border-0 mb-4">
+<div class="card-body p-4">
+
+<h5 class="mb-3 text-primary">
+    {% if is_hr_override %}
+        Apply Comp-Off for {{ employee.first_name }}
+    {% else %}
+        Apply Comp-Off
+    {% endif %}
+</h5>
+
+<form method="post">
+{% csrf_token %}
+
+{% if is_hr_override %}
+    <input type="hidden" name="employee_id" value="{{ employee.employee_id }}">
+{% endif %}
+
+<div class="mb-3">
+<label class="form-label">Worked Date</label>
+<input type="date" name="worked_date" class="form-control" required>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Hours Worked</label>
+<input type="number" name="hours_worked" min="8" class="form-control" required>
+</div>
+
+<button class="btn btn-secondary w-100">
+    Submit
+</button>
+</form>
+
+</div>
+</div>
+</div>
+
+<!-- COMPOFF HISTORY -->
+<div class="col-md-7">
+<div class="card shadow-sm border-0">
+<div class="card-body">
+
+<h5>
+    {% if is_hr_override %}
+        {{ employee.first_name }}'s Comp-Off History
+    {% else %}
+        My Comp-Off History
+    {% endif %}
+</h5>
+
+<table class="table table-bordered table-sm align-middle mt-3">
+<thead>
+<tr>
+    <th>Worked Date</th>
+    <th>Hours</th>
+    <th>Credits</th>
+    <th>Status</th>
+    <th>Flow</th>
+    <th style="width:160px;">Action</th>
+</tr>
+</thead>
+
+<tbody>
+{% for c in compoffs %}
+<tr>
+
+    <!-- DATE -->
+    <td>{{ c.work_date }}</td>
+
+    <!-- HOURS -->
+    <td>{{ c.hours_worked }}</td>
+
+    <!-- CREDITS -->
+    <td>
+        {{ c.hours_worked|divisibleby:8|yesno:"1,0" }}
+    </td>
+
+    <!-- STATUS -->
+    <td>
+        {% if c.status == "Approved" %}
+            <span class="badge bg-success">Approved</span>
+        {% elif c.status == "Rejected" %}
+            <span class="badge bg-danger">Rejected</span>
+        {% elif c.status == "Cancelled" %}
+            <span class="badge bg-secondary">Cancelled</span>
+        {% else %}
+            <span class="badge bg-warning text-dark">Pending</span>
+        {% endif %}
+    </td>
+
+    <!-- VIEW FLOW -->
+    <td>
+        <button class="btn btn-sm btn-outline-secondary"
+                onclick="showCompOffFlow('{{ c.compoff_id }}')">
+            View
+        </button>
+    </td>
+
+    <!-- ACTION -->
+    <td>
+        {% if c.status == "Pending" and not is_hr_override %}
+
+            <a href="{% url 'edit_compoff' c.compoff_id %}"
+               class="btn btn-sm btn-outline-primary">
+                Edit
+            </a>
+
+           <form method="post"
+      action="{% url 'cancel_compoff' c.compoff_id %}"
+      class="d-inline cancel-compoff-form">
+    {% csrf_token %}
+    <button type="button"
+            class="btn btn-sm btn-outline-danger"
+            onclick="confirmCancel(this)">
+        Cancel
+    </button>
+</form>
+
+        {% else %}
+            <span class="text-muted small">—</span>
+        {% endif %}
+    </td>
+
+</tr>
+{% empty %}
+<tr>
+    <td colspan="6" class="text-muted text-center">
+        No Comp-Off records found.
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<script>
+function confirmCancel(button) {
+
+    const form = button.closest("form");
+
+    Swal.fire({
+        title: "Cancel Comp-Off?",
+        text: "This action cannot be undone.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, cancel it",
+        cancelButtonText: "Keep it"
+    }).then((result) => {
+
+        if (result.isConfirmed) {
+
+            Swal.fire({
+                title: "Cancelled",
+                text: "Your Comp-Off request has been cancelled.",
+                icon: "success",
+                timer: 1200,
+                showConfirmButton: false
+            });
+
+            setTimeout(() => {
+                form.submit();
+            }, 800);
+        }
+
+    });
+}
+</script>
+
+<script>
+const compoffApprovalData = {
+{% for c in compoffs %}
+    "{{ c.compoff_id }}": [
+        {% for level in c.approvals.all %}
+        {
+            name: "{{ level.approver.first_name }}",
+            role: "{{ level.approver_role }}",
+            status: "{{ level.status }}",
+            remark: `{{ level.remarks|default_if_none:""|escapejs }}`,
+            date: "{{ level.action_date|date:'d M Y • H:i' }}"
+        },
+        {% endfor %}
+    ],
+{% endfor %}
+};
+
+function showCompOffFlow(id) {
+
+    let approvals = compoffApprovalData[id];
+    let html = "";
+
+    if (!approvals || approvals.length === 0) {
+        html = "<div class='text-muted'>No approval records yet.</div>";
+    } else {
+
+        approvals.forEach(function(item) {
+
+            let badgeClass = "bg-warning text-dark";
+            if (item.status === "Approved") badgeClass = "bg-success";
+            if (item.status === "Rejected") badgeClass = "bg-danger";
+            if (item.status === "Cancelled") badgeClass = "bg-secondary";
+
+            html += `
+                <div class="mb-3 p-3 border rounded text-start">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <span class="text-muted">(${item.role})</span>
+                        </div>
+                        <span class="badge ${badgeClass}">
+                            ${item.status}
+                        </span>
+                    </div>
+                    ${item.remark ? `<div class="small text-muted mt-2">Remark: ${item.remark}</div>` : ""}
+                    ${item.date ? `<div class="small text-muted">${item.date}</div>` : ""}
+                </div>
+            `;
+        });
+    }
+
+    Swal.fire({
+        title: "Comp-Off Approval Flow",
+        html: html,
+        width: 600,
+        confirmButtonColor: "#0d6efd"
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block title %}HR Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+.hr-wrapper {
+    background: #f8f9fc;
+    padding: 24px;
+    border-radius: 14px;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #6c757d;
+    margin-bottom: 14px;
+}
+
+/* Cards */
+.clean-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    transition: .2s ease;
+}
+
+.clean-card:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+.kpi-number {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.metric-number {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.table thead th {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.table tbody td {
+    font-size: 13px;
+}
+</style>
+
+<div class="hr-wrapper">
+
+    <!-- ================= HEADER ================= -->
+    <div class="mb-4">
+        <h4 class="fw-semibold mb-1">HR Panel</h4>
+        <div class="text-muted small">Advanced Workforce Analytics</div>
+    </div>
+
+    <!-- ================= WORKFORCE SNAPSHOT ================= -->
+    <div class="section-title">Workforce Snapshot</div>
+    <div class="row g-4 mb-4 text-center">
+
+        <div class="col-md-3">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block">Active Employees</small>
+                    <div class="kpi-number text-primary">{{ total_employees }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block">Present Today</small>
+                    <div class="kpi-number text-success">{{ present_today }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block">On Leave Today</small>
+                    <div class="kpi-number text-info">{{ today_on_leave }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card clean-card h-100">
+                <div class="card-body">
+                    <small class="text-muted d-block">Attendance %</small>
+                    <div class="kpi-number text-dark">{{ attendance_percentage }}%</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- ================= PENDING APPROVALS ================= -->
+<div class="section-title">Pending Approvals</div>
+
+<div class="row g-4">
+
+    <!-- Pending Leaves -->
+    <div class="col-md-6">
+        <div class="card clean-card h-100">
+            <div class="card-body">
+
+                <div class="section-title">Pending Leave Applications</div>
+
+                {% if pending_leaves %}
+                <table class="table table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee</th>
+                            <th>Leave</th>
+                            <th>Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in pending_leaves %}
+                        <tr>
+                            <td>{{ leave.employee.first_name }}</td>
+                            <td>{{ leave.leave_type.leave_name }}</td>
+                            <td>{{ leave.total_days }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    <div class="text-muted small">No pending leaves.</div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending CompOff -->
+    <div class="col-md-6">
+        <div class="card clean-card h-100">
+            <div class="card-body">
+
+                <div class="section-title">Pending Comp-Off Requests</div>
+
+                {% if pending_compoffs %}
+                <table class="table table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee</th>
+                            <th>Worked Date</th>
+                            <th>Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comp in pending_compoffs %}
+                        <tr>
+                            <td>
+                                {{ comp.employee.first_name }}
+                                <div class="small text-muted">
+                                    {{ comp.employee.emp_code }}
+                                </div>
+                            </td>
+                            <td>{{ comp.work_date|date:"d M Y" }}</td>
+                            <td>{{ comp.hours_worked }} hrs</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    <div class="text-muted small">No pending comp-offs.</div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+</div>
+    <!-- ================= ORGANIZATIONAL ANALYTICS ================= -->
+<div class="section-title">Organizational Analytics</div>
+
+<div class="row g-4 mb-4">
+
+    <!-- Leave Distribution -->
+    <div class="col-md-4">
+        <div class="card clean-card">
+            <div class="card-body">
+                <div class="section-title">Leave Distribution</div>
+                <div id="leaveDistributionChart" style="height:240px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Attendance -->
+    <div class="col-md-4">
+        <div class="card clean-card">
+            <div class="card-body">
+                <div class="section-title">Monthly Attendance %</div>
+                <div id="attendanceChart" style="height:240px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trend by Leave Type -->
+    <div class="col-md-4">
+        <div class="card clean-card">
+            <div class="card-body">
+                <div class="section-title">Monthly Trend by Leave Type</div>
+                <div id="multiTypeMonthlyChart" style="height:240px;"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+    <!-- ================= RISK INTELLIGENCE ================= -->
+    <div class="section-title">Workforce Risk Indicators</div>
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-6">
+            <div class="card clean-card">
+                <div class="card-body">
+                    <div class="section-title">Low Balance Employees</div>
+                    <ul class="small mb-0">
+                        {% for emp in low_balance_employees %}
+                            <li>{{ emp.employee.first_name }} (CL: {{ emp.cl_balance }})</li>
+                        {% empty %}
+                            <li class="text-muted">No critical balances</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card clean-card">
+                <div class="card-body">
+                    <div class="section-title">High Frequency Users</div>
+                    <ul class="small mb-0">
+                        {% for emp in high_frequency_users %}
+                            <li>{{ emp.employee__first_name }} ({{ emp.total_leaves }} leaves)</li>
+                        {% empty %}
+                            <li class="text-muted">No anomalies</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= APEX CHARTS ================= -->
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+// ---------------------------------------------------
+// Same Color System As Employee Dashboard
+// ---------------------------------------------------
+const leaveColors = [
+    '#0d6efd',  // CL
+    '#198754',  // ML
+    '#ffc107',  // OL
+    '#6f42c1',  // Comp-Off
+    '#dc3545'   // LOP
+];
+
+
+// ===================================================
+// LEAVE DISTRIBUTION (DONUT)
+// ===================================================
+    var donutSeries = [
+        {{ cl_used|default:0 }},
+        {{ ml_used|default:0 }},
+        {{ ol_used|default:0 }},
+        {{ comp_used|default:0 }},
+        {{ lop_used|default:0 }}
+    ];
+
+    // ===================================================
+    // LEAVE DISTRIBUTION (DONUT)
+    // ===================================================
+
+    new ApexCharts(
+    document.querySelector("#leaveDistributionChart"),
+    {
+        chart: {
+            type: 'donut',
+            height: 200,
+            toolbar: { show: true }
+        },
+
+        series: {{ leave_values|default:"[0,0,0,0,0]"|safe }},
+
+        labels: ['CL','ML','OL','Comp-Off','LOP'],
+
+        colors: [
+            '#0d6efd',  // CL
+            '#198754',  // ML
+            '#ffc107',  // OL
+            '#6f42c1',  // Comp-Off
+            '#dc3545'   // LOP
+        ],
+
+        legend: {
+            position: 'bottom'
+        },
+
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: "70%"
+                }
+            }
+        },
+
+        dataLabels: {
+            enabled: true
+        }
+
+    }).render();
+
+
+// ===================================================
+// MONTHLY ATTENDANCE
+// ===================================================
+new ApexCharts(
+document.querySelector("#attendanceChart"),
+{
+    chart: {
+        type: 'line',
+        height: 200,
+        toolbar: { show: true }
+    },
+
+    series: [{
+        name: "Attendance %", 
+
+        data: {{ attendance_monthly|safe }}
+    }]
+
+    xaxis: {
+        categories: [
+            'Jan','Feb','Mar','Apr','May','Jun',
+            'Jul','Aug','Sep','Oct','Nov','Dec'
+        ]
+    },
+
+    stroke: {
+        curve: 'smooth',
+        width: 3
+    },
+
+    markers: {
+        size: 4
+    },
+
+    colors: ['#198754'],
+
+    yaxis: {
+        min: 80,
+        max: 100
+    },
+
+    grid: {
+        borderColor: '#e9ecef'
+    }
+
+}).render();
+
+
+// ===================================================
+// MONTHLY LEAVE TREND
+// ===================================================
+var typeData = {{ type_monthly_data|default:"{}"|safe }};
+
+var seriesArray = [
+
+{
+    name: "CL",
+    data: typeData["CL"] || typeData["Casual Leave"] || [0,0,0,0,0,0,0,0,0,0,0,0]
+},
+
+{
+    name: "ML",
+    data: typeData["ML"] || typeData["Medical Leave"] || [0,0,0,0,0,0,0,0,0,0,0,0]
+},
+
+{
+    name: "OL",
+    data: typeData["OL"] || typeData["Optional Leave"] || [0,0,0,0,0,0,0,0,0,0,0,0]
+},
+
+{
+    name: "Comp-Off",
+    data: typeData["Comp-Off"] || typeData["Compensatory OFF"] || [0,0,0,0,0,0,0,0,0,0,0,0]
+},
+
+{
+    name: "LOP",
+    data: typeData["LOP"] || typeData["Loss of Pay"] || [0,0,0,0,0,0,0,0,0,0,0,0]
+}
+
+];
+
+new ApexCharts(
+document.querySelector("#multiTypeMonthlyChart"),
+{
+    chart: {
+        type: 'area',
+        height: 200,
+        toolbar: {
+            show: true,
+            tools: {
+                download: true,
+                selection: false,
+                zoom: false,
+                zoomin: false,
+                zoomout: false,
+                pan: false,
+                reset: false
+            }
+        }
+    },
+
+    series: seriesArray,
+
+    xaxis: {
+        categories: [
+            'Jan','Feb','Mar','Apr','May','Jun',
+            'Jul','Aug','Sep','Oct','Nov','Dec'
+        ]
+    },
+
+    colors: leaveColors,
+
+    stroke: {
+        curve: 'smooth',
+        width: [3,3,3,3,3],
+        dashArray: [0,5,2,0,0]
+    },
+
+    markers: {
+        size: 4,
+        strokeWidth: 2,
+        hover: { size: 6 }
+    },
+
+    fill: {
+        type: "gradient",
+        gradient: {
+            opacityFrom: 0.35,
+            opacityTo: 0.08
+        }
+    },
+
+    legend: {
+        position: 'bottom',
+        horizontalAlign: 'center'
+    },
+
+    dataLabels: {
+        enabled: false
+    },
+
+    grid: {
+        borderColor: '#e9ecef'
+    }
+
+}).render();
+
+});
+</script>
+{% endblock %}

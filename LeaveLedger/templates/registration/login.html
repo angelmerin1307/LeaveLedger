@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Login | LeaveLedger{% endblock %}
+
+{% block content %}
+<style>
+/* Remove navbar spacing */
+body {
+    padding-top: 0 !important;
+}
+
+/* Soft Animated Gradient */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(-45deg, #e3f2fd, #f8f9fa, #eef2ff, #e0f7fa);
+    background-size: 400% 400%;
+    animation: gradientBG 18s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Light Glass Card */
+.login-box {
+    width: 720px;
+    max-width: 92%;
+    display: flex;
+    border-radius: 18px;
+    overflow: hidden;
+    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 25px 40px rgba(0,0,0,0.08);
+}
+
+/* Left Image Panel */
+.login-left {
+    flex: 1;
+    background: url("{% static 'images/cse.jpg' %}") center no-repeat;
+    background-size: contain;
+    min-height: 420px;
+}
+
+/* Right Panel */
+.login-right {
+    flex: 1;
+    padding: 45px 40px;
+    color: #2c3e50;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.login-right h3 {
+    font-weight: 600;
+    margin-bottom: 25px;
+    font-size: 1.3rem;
+}
+
+/* Floating Inputs */
+.floating-group {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.floating-group input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #b0bec5;
+    color: #2c3e50;
+    padding: 6px 0;
+    font-size: 0.9rem;
+}
+
+.floating-group input:focus {
+    outline: none;
+    border-color: #0d6efd;
+}
+
+/* Button */
+.login-btn {
+    background: linear-gradient(90deg, #0d6efd, #4f8dfd);
+    border: none;
+    padding: 10px;
+    border-radius: 25px;
+    color: white;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(13,110,253,0.25);
+}
+
+.form-check-label,
+.extra-links {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+</style>
+<div class="login-container">
+
+    <div class="login-box">
+
+        <!-- LEFT IMAGE -->
+        <div class="login-left"></div>
+
+        <!-- RIGHT FORM -->
+        <div class="login-right">
+
+            <h3>Sign In</h3>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="floating-group">
+                    <input type="text"
+                           name="username"
+                           value="{{ form.username.value|default:'' }}"
+                           placeholder=" "
+                           required>
+                    <label>Username</label>
+                </div>
+
+                <div class="floating-group">
+                    <input type="password"
+                           name="password"
+                           placeholder=" "
+                           required>
+                    <label>Password</label>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="remember">
+                        <label class="form-check-label" for="remember">
+                            Keep me logged in
+                        </label>
+                    </div>
+                    <a href="{% url 'password_reset' %}" class="small text-info">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <button type="submit" class="btn login-btn w-100">
+                    SIGN IN
+                </button>
+
+            </form>
+
+            <div class="extra-links mt-4">
+                Privacy · Terms · About
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- SweetAlert WITHOUT Editing Views -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% if form.errors %}
+<script>
+Swal.fire({
+    icon: 'error',
+    title: 'Login Failed',
+    text: 'Invalid username or password',
+    confirmButtonColor: '#0072ff'
+});
+</script>
+{% endif %}
+
+{% endblock %}

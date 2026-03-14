@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+{% block title %}Apply Leave{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background: #f5f7fb;
+}
+
+/* Main wrapper tighter */
+.compact-wrapper {
+    max-width: 900px;
+    margin: 20px auto;
+}
+
+/* Cards tighter */
+.compact-card {
+    border: 1px solid #e6eaf2;
+    border-radius: 12px;
+}
+
+.compact-card .card-body {
+    padding: 16px 18px;
+}
+
+/* Section titles */
+.section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 600;
+    color: #8b93a7;
+    margin-bottom: 12px;
+}
+
+/* Balance inline row */
+.balance-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.balance-box {
+    flex: 1;
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #edf0f6;
+    border-radius: 10px;
+    padding: 8px 4px;
+}
+
+.balance-box div:first-child {
+    font-size: 10px;
+    color: #6b7280;
+}
+
+.balance-number {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Form labels */
+.form-label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* Inputs tighter */
+.form-control,
+.form-select {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+/* Reduce vertical spacing */
+.mb-3 {
+    margin-bottom: 12px !important;
+}
+
+/* Dates side by side */
+.date-row {
+    display: flex;
+    gap: 12px;
+}
+
+/* Compact textarea */
+textarea.form-control {
+    height: 70px;
+}
+
+/* Small button */
+.btn-primary {
+    font-size: 12px;
+    padding: 8px;
+    border-radius: 8px;
+    background: #111827;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #1f2937;
+}
+/* Make overall container narrower */
+.col-lg-8 {
+    max-width: 720px;
+}
+
+/* Reduce card body padding */
+.card-body {
+    padding: 16px 18px !important;
+}
+
+/* Smaller heading */
+h4 {
+    font-size: 18px !important;
+    margin-bottom: 18px !important;
+}
+
+/* Smaller balance heading */
+h5 {
+    font-size: 14px !important;
+}
+
+/* Reduce balance numbers size */
+.fs-5 {
+    font-size: 16px !important;
+}
+
+/* Reduce row spacing */
+.mb-4 {
+    margin-bottom: 16px !important;
+}
+
+/* Make grid button less tall */
+.btn-primary {
+    padding: 7px !important;
+}
+/* Make half-day label same as other labels */
+.form-check-label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+</style>
+
+{% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+{% endif %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <!-- LEAVE BALANCE SUMMARY -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5 class="mb-3 text-secondary">Your Leave Balance</h5>
+
+                <div class="row text-center">
+                    <div class="col">
+                        <div class="fw-semibold">CL</div>
+                        <div class="text-primary fs-5">{{ balance.cl_balance }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="fw-semibold">ML</div>
+                        <div class="text-success fs-5">{{ balance.ml_balance }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="fw-semibold">OL</div>
+                        <div class="text-warning fs-5">{{ balance.ol_balance }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="fw-semibold">LOP</div>
+                        <div class="text-danger fs-5">{{ balance.lop_taken }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="fw-semibold">Comp-Off</div>
+                        <div class="text-info fs-5">{{ compoff_credits }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- APPLY LEAVE FORM -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+
+                <h4 class="mb-4 text-primary">
+                    {% if is_hr_override %}
+                        Apply Leave for {{ employee.first_name }} ({{ employee.emp_code }})
+                    {% else %}
+                        {% if is_edit_mode %}
+                            Edit Leave
+                        {% else %}
+                            Apply Leave
+                        {% endif %}
+                    {% endif %}
+                </h4>
+
+                <form method="post" action="{% url 'apply_leave' %}">
+                    {% csrf_token %}
+
+                    {% if is_hr_override %}
+                        <input type="hidden" name="employee_id" value="{{ employee.employee_id }}">
+                    {% endif %}
+
+                    {% if is_edit_mode %}
+                        <input type="hidden" name="edit_leave_id" value="{{ edit_leave.leave_id }}">
+                    {% endif %}
+
+                    <!-- Leave Type -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Leave Type</label>
+
+                        <select name="leave_type" class="form-select" required>
+                            <option value="" disabled {% if not is_edit_mode %}selected{% endif %}>
+                                -- Select leave type --
+                            </option>
+
+                            {% for lt in leave_types %}
+                                {% if lt.leave_name|lower == "compensatory off" %}
+                                    {% if balance.compoff_credit > 0 %}
+                                        <option value="{{ lt.leave_type_id }}"
+                                            {% if is_edit_mode and edit_leave.leave_type.leave_type_id == lt.leave_type_id %}selected{% endif %}>
+                                            {{ lt.leave_name }} ({{ balance.compoff_credit }} available)
+                                        </option>
+                                    {% else %}
+                                        <option value="{{ lt.leave_type_id }}" disabled>
+                                            {{ lt.leave_name }} (No credits)
+                                        </option>
+                                    {% endif %}
+                                {% else %}
+                                    <option value="{{ lt.leave_type_id }}"
+                                        {% if is_edit_mode and edit_leave.leave_type.leave_type_id == lt.leave_type_id %}selected{% endif %}>
+                                        {{ lt.leave_name }}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Start Date -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Start Date</label>
+                        <input
+                            type="date"
+                            id="start_date"
+                            name="start_date"
+                            class="form-control"
+                            value="{% if is_edit_mode %}{{ edit_leave.start_date }}{% endif %}"
+                            required
+                        >
+                    </div>
+
+                    <!-- End Date -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">End Date</label>
+                        <input
+                            type="date"
+                            id="end_date"
+                            name="end_date"
+                            class="form-control"
+                            value="{% if is_edit_mode %}{{ edit_leave.end_date }}{% endif %}"
+                            required
+                        >
+                    </div>
+                    <!-- Half Day Option -->
+<div class="mb-3 form-check">
+    <input
+        type="checkbox"
+        class="form-check-input"
+        id="half_day"
+        name="half_day"
+        {% if is_edit_mode and edit_leave.total_days == 0.5 %}checked{% endif %}
+    >
+    <label class="form-check-label fw-semibold" for="half_day">
+        Apply as Half Day
+    </label>
+    <small class="text-muted d-block">
+        Half day allowed only for single-day leave.
+    </small>
+</div>
+
+                    <!-- Total Days -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Total Days</label>
+                        <input
+                            type="text"
+                            id="total_days"
+                            class="form-control"
+                            readonly
+                        >
+                        <small class="text-muted">
+                            Holidays are excluded automatically
+                        </small>
+                    </div>
+
+                    <!-- Reason -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Reason</label>
+                        <textarea
+                            name="reason"
+                            class="form-control"
+                            rows="3"
+                            placeholder="Brief reason for leave"
+                        
+                        >{% if is_edit_mode %}{{ edit_leave.reason }}{% endif %}</textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            {% if is_edit_mode %}
+                                Update Leave Request
+                            {% else %}
+                                Submit Leave Request
+                            {% endif %}
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+/* ================================
+   HOLIDAY DATA FROM DJANGO
+================================ */
+const holidayData = {{ ui_holidays|safe }};
+
+// Separate by type
+const compulsorySet = new Set();
+const optionalSet = new Set();
+const weekendSet = new Set();
+
+holidayData.forEach(h => {
+    if (h.type === "Compulsory") compulsorySet.add(h.date);
+    if (h.type === "Optional") optionalSet.add(h.date);
+    if (h.type === "Weekend") weekendSet.add(h.date);
+});
+
+// Only these are disabled
+const disabledDates = [
+    ...compulsorySet,
+    ...weekendSet
+];
+
+/* ================================
+   INPUT ELEMENTS
+================================ */
+const startInput = document.getElementById("start_date");
+const endInput = document.getElementById("end_date");
+const totalDaysInput = document.getElementById("total_days");
+const halfDayCheckbox = document.getElementById("half_day");
+
+/* ================================
+   SAFE ISO FORMAT
+================================ */
+function toISO(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+/* ================================
+   CALCULATE LEAVE DAYS
+================================ */
+function calculateDays() {
+    const start = startInput.value;
+    const end = endInput.value;
+
+    if (!start || !end) {
+        totalDaysInput.value = "";
+        return;
+    }
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (endDate < startDate) {
+        totalDaysInput.value = "0";
+        return;
+    }
+
+    if (halfDayCheckbox.checked) {
+        totalDaysInput.value = (start === end) ? "0.5" : "";
+        return;
+    }
+
+    let count = 0;
+    let current = new Date(startDate);
+
+    while (current <= endDate) {
+        const iso = toISO(current);
+
+        // Count only if NOT compulsory or weekend
+        if (!compulsorySet.has(iso) && !weekendSet.has(iso)) {
+            count++;
+        }
+
+        current.setDate(current.getDate() + 1);
+    }
+
+    totalDaysInput.value = count;
+}
+
+/* ================================
+   EVENT LISTENERS
+================================ */
+startInput.addEventListener("change", calculateDays);
+endInput.addEventListener("change", calculateDays);
+halfDayCheckbox.addEventListener("change", calculateDays);
+window.addEventListener("load", calculateDays);
+
+/* ================================
+   FLATPICKR INIT
+================================ */
+function initDatePicker(selector) {
+    flatpickr(selector, {
+        dateFormat: "Y-m-d",
+
+        // ❌ Disable only Compulsory + Weekend
+        disable: disabledDates,
+
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            const iso = toISO(dayElem.dateObj);
+
+            // 🔴 Compulsory (Disabled)
+            if (compulsorySet.has(iso)) {
+                dayElem.style.background = "#fee2e2";
+                dayElem.style.color = "#b91c1c";
+                dayElem.style.opacity = "0.6";
+            }
+
+            // ⚫ Weekend (Disabled)
+            if (weekendSet.has(iso)) {
+                dayElem.style.background = "#e5e7eb";
+                dayElem.style.color = "#6b7280";
+                dayElem.style.opacity = "0.6";
+            }
+
+            // 🟢 Optional (Selectable)
+            if (optionalSet.has(iso)) {
+                dayElem.style.background = "#dcfce7";
+                dayElem.style.color = "#166534";
+                dayElem.style.fontWeight = "600";
+            }
+        }
+    });
+}
+
+/* Initialize once */
+initDatePicker("#start_date");
+initDatePicker("#end_date");
+</script>
+{% endblock %}

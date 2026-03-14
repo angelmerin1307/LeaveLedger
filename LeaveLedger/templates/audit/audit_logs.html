@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs{% endblock %}
+
+{% block content %}
+<div class="audit-wrapper">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-semibold mb-0">Audit Logs</h3>
+        <p class="text-muted mb-0">System activity & compliance tracking</p>
+    </div>
+</div>
+
+<!-- FILTERS -->
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <input type="text"
+               name="action"
+               value="{{ action }}"
+               class="form-control"
+               placeholder="Filter by action">
+    </div>
+
+    <div class="col-md-4">
+        <input type="text"
+               name="user"
+               value="{{ user_filter }}"
+               class="form-control"
+               placeholder="Employee code">
+    </div>
+
+    <div class="col-md-4">
+        <button type="submit" class="btn btn-primary">
+            Apply Filters
+        </button>
+        <a href="{% url 'audit_logs' %}" class="btn btn-outline-secondary">
+            Clear
+        </a>
+    </div>
+</form>
+
+<!-- AUDIT LOG TABLE -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="px-3">Employee</th>
+                        <th>Action</th>
+                        <th>Module</th>
+                        <th class="text-nowrap">Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for log in page_obj %}
+                    <tr>
+                        <td class="px-3">
+                            {% if log.user %}
+                                <strong>{{ log.user.emp_code }}</strong>
+                                – {{ log.user.first_name }} – {{ log.user.role }}
+                            {% else %}
+                                <span class="text-muted">System</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ log.action }}
+                        </td>
+
+                        <td>
+                            <span class="badge bg-secondary">
+                                {{ log.module }}
+                            </span>
+                        </td>
+
+                        <td class="text-nowrap">
+                            {{ log.timestamp|date:"d M Y, H:i" }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            No audit records found.
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p class="text-muted text-center my-4">
+                No audit records found.
+            </p>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- PAGINATION -->
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.previous_page_number }}">
+                    Previous
+                </a>
+            </li>
+        {% endif %}
+
+        <li class="page-item active">
+            <span class="page-link">
+                {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.next_page_number }}">
+                    Next
+                </a>
+            </li>
+        {% endif %}
+
+    </ul>
+</nav>
+{% endif %}
+</div>
+<style>
+
+/* ================= WRAPPER ================= */
+.audit-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* ================= HEADER ================= */
+.audit-wrapper h3 {
+    font-size: 18px;
+    letter-spacing: -0.2px;
+}
+
+.audit-wrapper p {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+/* ================= FILTERS ================= */
+.audit-wrapper form {
+    background: #ffffff;
+    padding: 14px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+
+.audit-wrapper .form-control {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.audit-wrapper .form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.06);
+}
+
+.audit-wrapper .btn {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+/* ================= CARD ================= */
+.audit-wrapper .card {
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+}
+
+/* ================= TABLE ================= */
+.audit-wrapper .table thead {
+    background: #f9fafb;
+}
+
+.audit-wrapper .table thead th {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 10px 14px;
+}
+
+.audit-wrapper .table tbody td {
+    font-size: 12px;
+    padding: 8px 14px;
+    vertical-align: middle;
+}
+
+.audit-wrapper .table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* ================= BADGE ================= */
+.audit-wrapper .badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #eef2ff !important;
+    color: #3730a3 !important;
+}
+
+/* ================= PAGINATION ================= */
+.audit-wrapper .pagination .page-link {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.audit-wrapper .pagination .active .page-link {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+/* ================= SPACING TIGHTER ================= */
+.audit-wrapper .mb-4 {
+    margin-bottom: 1.2rem !important;
+}
+
+.audit-wrapper .row.g-2 {
+    --bs-gutter-x: .6rem;
+    --bs-gutter-y: .6rem;
+}
+
+</style>
+
+{% endblock %}

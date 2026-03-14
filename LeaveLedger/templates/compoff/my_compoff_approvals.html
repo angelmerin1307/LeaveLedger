@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}My Comp-Off Approvals{% endblock %}
+{% block content %}
+
+<h4 class="fw-semibold mb-4">My Comp-Off Approvals</h4>
+
+<form method="get" class="mb-3 d-flex align-items-center gap-2">
+    <label class="fw-semibold small mb-0">Status</label>
+    <select name="status"
+            class="form-select form-select-sm w-auto"
+            onchange="this.form.submit()">
+        {% for value, label in status_choices %}
+            <option value="{{ value }}"
+                    {% if value == current_status %}selected{% endif %}>
+                {{ label }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+
+{% if approvals %}
+<table class="table table-bordered table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Employee</th>
+            <th>Work Date</th>
+            <th>Hours</th>
+            <th>Status</th>
+            <th>Flow</th>
+            <th style="width:200px;">Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for a in approvals %}
+        <tr>
+
+            <!-- EMPLOYEE -->
+            <td>
+                {{ a.compoff.employee.first_name }}
+                <div class="small text-muted">
+                    {{ a.compoff.employee.emp_code }}
+                </div>
+            </td>
+
+            <!-- DATE -->
+            <td>{{ a.compoff.work_date }}</td>
+
+            <!-- HOURS -->
+            <td>{{ a.compoff.hours_worked }}</td>
+
+            <!-- STATUS -->
+            <td>
+                {% if a.status == "Approved" %}
+                    <span class="badge bg-success">Approved</span>
+                {% elif a.status == "Rejected" %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                {% endif %}
+            </td>
+
+            <!-- FLOW -->
+            <td>
+                <button class="btn btn-sm btn-outline-secondary"
+                        onclick="showCompOffFlow('{{ a.compoff.compoff_id }}')">
+                    View
+                </button>
+            </td>
+
+            <!-- ACTION -->
+            <td>
+
+                {% if a.status == "Pending" %}
+
+                <!-- APPROVE -->
+                <form method="post"
+                      action="{% url 'approve_compoff' a.approval_id %}"
+                      class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        Approve
+                    </button>
+                </form>
+
+                <!-- REJECT BUTTON -->
+                <button class="btn btn-outline-danger btn-sm ms-1"
+                        onclick="toggleRejectBox('{{ a.approval_id }}')">
+                    Reject
+                </button>
+
+                <!-- HIDDEN REJECT FORM -->
+                <form method="POST"
+                      action="{% url 'reject_compoff' a.approval_id %}"
+                      id="reject-box-{{ a.approval_id }}"
+                      class="mt-2 d-none">
+
+                    {% csrf_token %}
+
+                    <input type="text"
+                           name="remarks"
+                           class="form-control form-control-sm mb-1"
+                           placeholder="Enter rejection remarks"
+                           required>
+
+                    <button type="submit"
+                            class="btn btn-danger btn-sm">
+                        Confirm Reject
+                    </button>
+
+                </form>
+
+                {% else %}
+
+                    <span class="text-muted small">
+                        {{ a.remarks|default:"—" }}
+                    </span>
+
+                {% endif %}
+
+            </td>
+
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="text-muted py-4 text-center">
+    No Comp-Off approvals found.
+</div>
+{% endif %}
+
+<!-- SWEETALERT -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+
+// Toggle reject remark box
+function toggleRejectBox(id) {
+    const box = document.getElementById("reject-box-" + id);
+    box.classList.toggle("d-none");
+}
+
+
+// APPROVAL FLOW DATA
+const compoffApprovalData = {
+{% for a in approvals %}
+    "{{ a.compoff.compoff_id }}": [
+        {% for level in a.compoff.approvals.all %}
+        {
+            name: "{{ level.approver.first_name }}",
+            role: "{{ level.approver_role }}",
+            status: "{{ level.status }}",
+            remark: `{{ level.remarks|default_if_none:""|escapejs }}`,
+            date: "{{ level.action_date|date:'d M Y • H:i' }}"
+        },
+        {% endfor %}
+    ],
+{% endfor %}
+};
+
+function showCompOffFlow(id) {
+
+    let approvals = compoffApprovalData[id];
+    let html = "";
+
+    if (!approvals || approvals.length === 0) {
+        html = "<div class='text-muted'>No approval records yet.</div>";
+    } else {
+
+        approvals.forEach(function(item) {
+
+            let badgeClass = "bg-warning text-dark";
+            if (item.status === "Approved") badgeClass = "bg-success";
+            if (item.status === "Rejected") badgeClass = "bg-danger";
+
+            html += `
+                <div class="mb-3 p-3 border rounded text-start">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <span class="text-muted">(${item.role})</span>
+                        </div>
+                        <span class="badge ${badgeClass}">
+                            ${item.status}
+                        </span>
+                    </div>
+                    ${item.remark ? `<div class="small text-muted mt-2">Remark: ${item.remark}</div>` : ""}
+                    ${item.date ? `<div class="small text-muted">${item.date}</div>` : ""}
+                </div>
+            `;
+        });
+    }
+
+    Swal.fire({
+        title: "Comp-Off Approval Flow",
+        html: html,
+        width: 600,
+        confirmButtonColor: "#0d6efd"
+    });
+}
+
+</script>
+
+{% endblock %}

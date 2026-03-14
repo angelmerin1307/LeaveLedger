@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Manage Employees{% endblock %}
+
+{% block content %}
+
+<style>
+.page-header h4 {
+    font-weight: 600;
+}
+
+.section-subtitle {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.employee-card {
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    transition: .2s ease;
+}
+
+.employee-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+.table thead th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6c757d;
+    background: #f8f9fc;
+}
+
+.table tbody td {
+    font-size: 14px;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f9fafc;
+}
+
+.role-badge {
+    background: #eef2ff;
+    color: #4f46e5;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.status-active {
+    background: #e6f7ed;
+    color: #198754;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-inactive {
+    background: #f1f3f5;
+    color: #6c757d;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.action-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 8px;
+}
+</style>
+
+<!-- ================= HEADER ================= -->
+<div class="page-header mb-4">
+    <h4 class="mb-1">Employee Directory</h4>
+    <div class="section-subtitle">
+        Manage workforce records and HR operations
+    </div>
+</div>
+
+<!-- ================= SEARCH & COUNT BAR ================= -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="text-muted small">
+        Total Employees: <strong>{{ employees|length }}</strong>
+    </div>
+
+    <input type="text"
+           id="employeeSearch"
+           class="form-control form-control-sm"
+           placeholder="Search employee..."
+           style="width: 220px;">
+</div>
+
+<!-- ================= TABLE CARD ================= -->
+<div class="card employee-card">
+    <div class="card-body p-0">
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="employeeTable">
+
+                <thead>
+                    <tr>
+                        <th class="ps-4">Emp Code</th>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for emp in employees %}
+                    <tr>
+
+                        <td class="ps-4 fw-semibold">
+                            {{ emp.emp_code }}
+                        </td>
+
+                        <td>
+                            {{ emp.first_name }} {{ emp.last_name }}
+                        </td>
+
+                        <td>
+                            <span class="role-badge">
+                                {{ emp.role }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if emp.is_active %}
+                                <span class="status-active">
+                                    Active
+                                </span>
+                            {% else %}
+                                <span class="status-inactive">
+                                    Inactive
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-end pe-4">
+
+                            <a href="{% url 'employee_detail' emp.pk %}"
+                               class="btn btn-outline-secondary btn-sm action-btn">
+                                View
+                            </a>
+
+                            <a href="{% url 'hr_apply_leave' emp.employee_id %}"
+                               class="btn btn-outline-primary btn-sm action-btn">
+                                Leave
+                            </a>
+
+                            <a href="{% url 'apply_compoff' %}?employee_id={{ emp.employee_id }}"
+                               class="btn btn-outline-dark btn-sm action-btn">
+                                Comp-Off
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="5"
+                            class="text-center text-muted py-4">
+                            No employees found.
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= SEARCH SCRIPT ================= -->
+<script>
+document.getElementById("employeeSearch").addEventListener("keyup", function() {
+    let value = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#employeeTable tbody tr");
+
+    rows.forEach(function(row) {
+        row.style.display =
+            row.innerText.toLowerCase().includes(value)
+            ? ""
+            : "none";
+    });
+});
+</script>
+
+{% endblock %}

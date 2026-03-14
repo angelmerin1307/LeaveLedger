@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h4>Pending CompOff Approvals</h4>
+
+{% if approvals %}
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Employee</th>
+            <th>Work Date</th>
+            <th>Hours</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for a in approvals %}
+        <tr>
+            <td>{{ a.compoff.employee.first_name }}</td>
+            <td>{{ a.compoff.work_date }}</td>
+            <td>{{ a.compoff.hours_worked }}</td>
+            <td>{{ a.status }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">No pending CompOff approvals.</p>
+{% endif %}
+
+{% endblock %}
