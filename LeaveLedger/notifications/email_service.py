@@ -1,14 +1,9 @@
+import threading
 from django.core.mail import send_mail
 from django.conf import settings
 
 
-def send_notification(subject, message, recipients):
-
-    recipients = [email for email in recipients if email]
-
-    if not recipients:
-        return
-
+def send_async_email(subject, message, recipients):
     send_mail(
         subject,
         message,
@@ -18,6 +13,17 @@ def send_notification(subject, message, recipients):
     )
 
 
+def send_notification(subject, message, recipients):
+    recipients = [email for email in recipients if email]
+
+    if not recipients:
+        return
+
+    # Run email in background thread
+    threading.Thread(
+        target=send_async_email,
+        args=(subject, message, recipients),
+    ).start()
 # -------------------------------------------------
 # LEAVE EVENTS
 # -------------------------------------------------
@@ -231,10 +237,8 @@ Please review if necessary.
 LeaveLedger System
 """
 
-    send_mail(
-        subject,
-        message,
-        settings.EMAIL_HOST_USER,
-        list(recipients),
-        fail_silently=False
-    )
+    threading.Thread(
+    target=send_mail,
+    args=(subject, message, settings.EMAIL_HOST_USER, list(recipients)),
+    kwargs={"fail_silently": True}
+    ).start()
