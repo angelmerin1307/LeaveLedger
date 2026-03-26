@@ -6,6 +6,11 @@ from django.urls import reverse
 
 from audit.utils import log_action
 
+
+
+from django.db import IntegrityError
+
+
 @login_required
 def manage_holidays(request):
     employee = request.user.employee_profile
@@ -23,19 +28,27 @@ def manage_holidays(request):
             holiday_type = request.POST.get("holiday_type")
 
             if holiday_date and holiday_name and holiday_type:
-                holiday = Holiday.objects.create(
-                    holiday_date=holiday_date,
-                    holiday_name=holiday_name,
-                    holiday_type=holiday_type
-                )
+                try:
+                    holiday = Holiday.objects.create(
+                        holiday_date=holiday_date,
+                        holiday_name=holiday_name,
+                        holiday_type=holiday_type
+                    )
 
-                log_action(
-                    actor=employee,
-                    module="HOLIDAY",
-                    action=f"Added holiday {holiday.holiday_name} ({holiday.holiday_date})"
-                )
+                    # SAFE AUDIT LOG
+                    try:
+                        log_action(
+                            actor=employee,
+                            module="HOLIDAY",
+                            action=f"Added holiday {holiday.holiday_name} ({holiday.holiday_date})"
+                        )
+                    except Exception as e:
+                        print("Audit log failed:", e)
 
-            return redirect("manage_holidays") + "?status=added"
+                except IntegrityError:
+                    return redirect(reverse("manage_holidays") + "?status=exists")
+
+            return redirect(reverse("manage_holidays") + "?status=added")
 
         # ---------------- EDIT ----------------
         elif action == "edit":
@@ -51,11 +64,14 @@ def manage_holidays(request):
                 h.holiday_type = request.POST.get("holiday_type")
                 h.save()
 
-                log_action(
-                    actor=employee,
-                    module="HOLIDAY",
-                    action=f"Updated holiday {old_name} ({old_date}) → {h.holiday_name} ({h.holiday_date})"
-                )
+                try:
+                    log_action(
+                        actor=employee,
+                        module="HOLIDAY",
+                        action=f"Updated holiday {old_name} ({old_date}) → {h.holiday_name} ({h.holiday_date})"
+                    )
+                except Exception as e:
+                    print("Audit log failed:", e)
 
             return redirect(reverse("manage_holidays") + "?status=updated")
 
@@ -65,15 +81,18 @@ def manage_holidays(request):
 
             h = Holiday.objects.filter(pk=holiday_id).first()
             if h:
-                log_action(
-                    actor=employee,
-                    module="HOLIDAY",
-                    action=f"Deleted holiday {h.holiday_name} ({h.holiday_date})"
-                )
+                try:
+                    log_action(
+                        actor=employee,
+                        module="HOLIDAY",
+                        action=f"Deleted holiday {h.holiday_name} ({h.holiday_date})"
+                    )
+                except Exception as e:
+                    print("Audit log failed:", e)
 
                 h.delete()
 
-            return redirect(reverse("manage_holidays") + "?status=added")
+            return redirect(reverse("manage_holidays") + "?status=deleted")
 
     holidays = Holiday.objects.order_by("holiday_date")
 
