@@ -73,7 +73,7 @@ def manage_holidays(request):
 
                 h.delete()
 
-            return redirect(reverse("manage_holidays") + "?status=deleted")
+            return redirect(reverse("manage_holidays") + "?status=added")
 
     holidays = Holiday.objects.order_by("holiday_date")
 
