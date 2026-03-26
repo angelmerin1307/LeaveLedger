@@ -505,9 +505,9 @@ def hr_dashboard(request):
             "excessive_lop_users": excessive_lop_users,
         }
     )
+
 @login_required
 def hr_create_employee(request):
-
     hr = request.user.employee_profile
 
     if hr.role != "HR":
@@ -520,58 +520,71 @@ def hr_create_employee(request):
             try:
                 with transaction.atomic():
 
-                    # Create employee object (not saved yet)
                     employee = form.save(commit=False)
-
                     username = employee.emp_code.lower()
 
+                    # Check username exists
                     if User.objects.filter(username=username).exists():
-                        raise ValueError("Employee code already exists.")
+                        messages.error(request, "Employee code already exists.")
+                        return redirect("hr_create_employee")
 
-                    # ✅ Django 6 compatible password generation
+                    # Generate temporary password
                     temp_password = get_random_string(10)
 
-                    # Create auth user
+                    # Create Django auth user
                     user = User.objects.create_user(
                         username=username,
                         password=temp_password,
                         email=employee.email,
                     )
 
+                    # Link employee to user
                     employee.user = user
                     employee.role = "EMPLOYEE"
                     employee.save()
 
                     # Audit log
-                    AuditLog.objects.create(
-                        user=hr,
-                        module="EMPLOYEE",
-                        action=f"Created employee {employee.emp_code}",
+                    try:
+                        AuditLog.objects.create(
+                            user=hr,
+                            module="EMPLOYEE",
+                            action=f"Created employee {employee.emp_code}",
+                        )
+                    except Exception as e:
+                        print("Audit log failed:", e)
+
+                # Send email (outside transaction)
+                try:
+                    send_mail(
+                        subject="Your LeaveLedger Login Credentials",
+                        message=(
+                            "Hello,\n\n"
+                            "Your LeaveLedger account has been created.\n\n"
+                            f"Username: {username}\n"
+                            f"Temporary Password: {temp_password}\n\n"
+                            "Please login and change your password."
+                        ),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[employee.email],
+                        fail_silently=True,
                     )
+                except Exception as e:
+                    print("Email failed:", e)
 
-                # 📧 Send credentials email AFTER transaction commit
-                send_mail(
-                    subject="Your LeaveLedger Login Credentials",
-                    message=(
-                        "Hello,\n\n"
-                        "Your LeaveLedger account has been created.\n\n"
-                        f"Username: {username}\n"
-                        f"Temporary Password: {temp_password}\n\n"
-                        "Please login and change your password immediately."
-                    ),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[employee.email],
-                    fail_silently=False,
+                messages.success(request, "Employee created successfully.")
+                return redirect("manage_employees")
+
+            except IntegrityError:
+                messages.error(
+                    request,
+                    "Duplicate data detected (Email / Phone / PAN / UAN / Account already exists)."
                 )
-
-                # ✅ CLEAN SUCCESS FLAG (for SweetAlert)
-                messages.success(request, "employee_created_success")
-
-                return redirect("employee_dashboard")
+                return redirect("hr_create_employee")
 
             except Exception as e:
                 traceback.print_exc()
                 messages.error(request, f"Error creating employee: {str(e)}")
+                return redirect("hr_create_employee")
 
     else:
         form = HRCreateEmployeeForm()
